@@ -93,28 +93,27 @@ const SPRING_TILT    = { type: "spring", stiffness: 220, damping: 20 } as const;
 /* ─────────────────────────────────────────────────────────────
    VARIANTS MAP
 ───────────────────────────────────────────────────────────── */
-const VARIANTS: Record<Variant, { hidden: object; visible: object; transition: object }> = {
-  rotate: {
-    hidden:  { opacity: 0, rotateX: -10, y: 48, scale: 0.97 },
-    visible: { opacity: 1, rotateX: 0,   y: 0,  scale: 1 },
-    transition: SPRING_ENTRY,
-  },
-  build: {
-    hidden:  { opacity: 0, scale: 0.8, y: -60, filter: "blur(10px)" },
-    visible: { opacity: 1, scale: 1,   y: 0,   filter: "blur(0px)" },
-    transition: SPRING_BUILD,
-  },
-  fade: {
-    hidden:  { opacity: 0, y: 24 },
-    visible: { opacity: 1, y: 0 },
-    transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1] },
-  },
-  slideUp: {
-    hidden:  { opacity: 0, y: 56 },
-    visible: { opacity: 1, y: 0 },
-    transition: SPRING_ENTRY,
-  },
-};
+function getVariants(variant: Variant, delay: number) {
+  const base = {
+    rotate:  {
+      hidden:  { opacity: 0, rotateX: -10, y: 48, scale: 0.97 },
+      visible: { opacity: 1, rotateX: 0,   y: 0,  scale: 1,  transition: { ...SPRING_ENTRY,  delay } },
+    },
+    build:   {
+      hidden:  { opacity: 0, scale: 0.8, y: -60, filter: "blur(10px)" },
+      visible: { opacity: 1, scale: 1,   y: 0,   filter: "blur(0px)", transition: { ...SPRING_BUILD,  delay } },
+    },
+    fade:    {
+      hidden:  { opacity: 0, y: 24 },
+      visible: { opacity: 1, y: 0,  transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1] as number[], delay } },
+    },
+    slideUp: {
+      hidden:  { opacity: 0, y: 56 },
+      visible: { opacity: 1, y: 0,  transition: { ...SPRING_ENTRY, delay } },
+    },
+  } as const;
+  return base[variant];
+}
 
 /* ─────────────────────────────────────────────────────────────
    GLITCH-SHIMMER overlay (fires once after "build" completes)
@@ -187,8 +186,6 @@ export function Section3D({
   const isInView = useInView(ref, { once: true, margin: "-8% 0px -8% 0px" });
   const [shimmerActive, setShimmerActive] = useState(false);
 
-  const v = VARIANTS[variant];
-
   /* Fire shimmer once for "build" variant */
   useEffect(() => {
     if (isInView && variant === "build") {
@@ -204,10 +201,7 @@ export function Section3D({
       style={{ transformStyle: "preserve-3d", position: "relative", ...style }}
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
-      variants={{
-        hidden: v.hidden,
-        visible: { ...v.visible, transition: { ...v.transition, delay } },
-      }}
+      variants={getVariants(variant, delay)}
     >
       {variant === "build" && <GlitchShimmer active={shimmerActive} />}
       {children}

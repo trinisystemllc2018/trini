@@ -3,24 +3,15 @@
 /**
  * PerspectiveGrid.tsx — Fixed 3D grid that reacts to mouse movement
  *
- * Renders a vanishing-point grid behind the hero or any full-bleed section.
- * The grid shifts slightly on mousemove to simulate depth/parallax.
- *
  * Usage:
  *   <div className="relative">
- *     <PerspectiveGrid />          ← inside a relative container
+ *     <PerspectiveGrid />
  *     <YourContent />
  *   </div>
- *
- * Props:
- *   color       — grid line color (default: rgba(129,140,248,0.55))
- *   cellSize    — px size of one cell at the horizon (default: 60)
- *   strength    — how much the grid shifts on mouse move 0–1 (default: 0.018)
- *   fixed       — whether to use position:fixed (for whole-page grids)
  */
 
 import { useEffect, useRef } from "react";
-import { useMotionValue, useSpring, motion } from "framer-motion";
+import { useMotionValue, useSpring, useTransform, motion } from "framer-motion";
 
 interface PerspectiveGridProps {
   color?: string;
@@ -51,6 +42,10 @@ export function PerspectiveGrid({
     return () => window.removeEventListener("mousemove", move);
   }, [mx, my]);
 
+  // Derive background-position shift from mouse position
+  const bgX = useTransform(smx, (v) => `calc(50% + ${(v - 0.5) * strength * 200}px)`);
+  const bgY = useTransform(smy, (v) => `calc(0px + ${(v - 0.5) * strength * 120}px)`);
+
   return (
     <motion.div
       aria-hidden
@@ -61,31 +56,23 @@ export function PerspectiveGrid({
         zIndex: 0,
         overflow: "hidden",
         opacity,
-        /* The grid itself is a CSS background — we shift its position with motion */
         backgroundImage: `
           linear-gradient(${color} 1px, transparent 1px),
           linear-gradient(90deg, ${color} 1px, transparent 1px)
         `,
         backgroundSize: `${cellSize}px ${cellSize}px`,
-        /* Perspective transform on the entire grid plane */
         transform: "perspective(600px) rotateX(55deg) scaleY(2.2)",
         transformOrigin: "50% 0%",
-        /* Shift grid position with spring motion to react to mouse */
-        backgroundPosition: `
-          calc(50% + ${strength * 100}% * var(--mx, 0.5)) 
-          calc(0px + ${strength * 100}% * var(--my, 0.5))
-        `,
-        x: smx,
-        y: smy,
-      } as React.CSSProperties}
+        backgroundPositionX: bgX,
+        backgroundPositionY: bgY,
+      }}
     />
   );
 }
 
 /**
- * HeroGridCanvas — alternative canvas-based grid for the hero.
- * Draws an animated perspective grid that breathes and reacts to scroll.
- * More performant than the CSS version for full-page coverage.
+ * HeroGridCanvas — canvas-based animated perspective grid.
+ * More performant than CSS version for full-page coverage.
  */
 export function HeroGridCanvas({
   color = "rgba(99,102,241,0.45)",
@@ -122,7 +109,6 @@ export function HeroGridCanvas({
 
     const draw = () => {
       t += 0.004;
-      /* Lerp mouse */
       mouseRef.current.x += (targetRef.current.x - mouseRef.current.x) * 0.06;
       mouseRef.current.y += (targetRef.current.y - mouseRef.current.y) * 0.06;
 
@@ -137,10 +123,9 @@ export function HeroGridCanvas({
       const ROWS = 18;
       const breathe = 1 + Math.sin(t) * 0.012;
 
-      ctx.strokeStyle = color;
       ctx.lineWidth = lineWidth;
 
-      /* Vertical lines spreading from vanishing point */
+      // Vertical lines spreading from vanishing point
       for (let c = 0; c <= COLS; c++) {
         const frac = c / COLS;
         const x0 = vanishX;
@@ -160,19 +145,17 @@ export function HeroGridCanvas({
         ctx.stroke();
       }
 
-      /* Horizontal lines — perspective spacing (closer at bottom) */
+      // Horizontal lines with perspective spacing
       for (let r = 0; r <= ROWS; r++) {
         const frac = r / ROWS;
-        /* Exponential spacing = perspective illusion */
         const yFrac = Math.pow(frac, 1.8);
         const y = vanishY + (H * 1.1 - vanishY) * yFrac;
-
-        /* Width at this y */
         const lerpT = (y - vanishY) / (H * 1.1 - vanishY);
         const x0 = vanishX + (0 - vanishX) * lerpT * breathe;
         const x1 = vanishX + (W - vanishX) * lerpT * breathe;
-
         const alpha = Math.min(1, frac * 2);
+
+        // Parse the alpha from the color string and apply
         ctx.strokeStyle = color.replace(/[\d.]+\)$/, `${alpha * 0.8})`);
         ctx.lineWidth = lineWidth * (0.4 + frac * 0.6);
 
