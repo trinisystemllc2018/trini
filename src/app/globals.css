@@ -235,3 +235,7 @@ body::after {
 .download-cta-override { background:linear-gradient(135deg,rgba(20,184,166,.15) 0%,rgba(5,150,105,.1) 100%) !important; border-top:var(--border-subtle); border-bottom:var(--border-subtle); }
 
 @media print { .no-print{display:none !important} body{background:#fff;color:#000} }
+
+/* ── How-To Hub: Facebook card hover (server-component safe) ── */
+.fb-hover-card { border-color: #e5e7eb; transition: border-color 0.2s, box-shadow 0.2s; }
+.fb-hover-card:hover { border-color: #1877F2; box-shadow: 0 4px 16px rgba(24,119,242,0.15); }

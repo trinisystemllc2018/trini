@@ -6,6 +6,11 @@ import FacebookWalkthrough from "@/components/features/FacebookWalkthrough";
 import { GMAIL_PAGES, ALL_GMAIL_SLUGS, type GmailPage } from "@/lib/gmail-data";
 import { FACEBOOK_PAGES, ALL_FACEBOOK_SLUGS, FB_THEME, type FacebookPage } from "@/lib/facebook-data";
 
+// Render pages on-demand (SSR) to avoid 60s build timeout from pre-rendering
+// 24 data-heavy pages simultaneously. Pages are still cached after first render.
+export const dynamic = "force-dynamic";
+export const revalidate = 3600; // Re-cache every hour
+
 /* ═══════════════════════════════════════════════════════════════════
    /how-to/[slug] — Senior help cluster (multi-brand)
 
@@ -63,11 +68,6 @@ function brandTheme(brand: Brand) {
 }
 
 type Props = { params: { slug: string } };
-
-// Pre-render EVERY Gmail and Facebook page at build time
-export function generateStaticParams() {
-  return [...ALL_GMAIL_SLUGS, ...ALL_FACEBOOK_SLUGS].map((slug) => ({ slug }));
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const found = findPage(params.slug);

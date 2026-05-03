@@ -100,10 +100,7 @@ export default function HowToHub() {
                 <Link
                   key={slug}
                   href={`/how-to/${slug}`}
-                  className="block bg-white rounded-xl p-5 border-2 border-gray-100 hover:shadow-lg transition-all"
-                  style={{ borderColor: "transparent" }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.borderColor = FB_BLUE)}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.borderColor = "")}
+                  className="block bg-white rounded-xl p-5 border-2 fb-hover-card"
                 >
                   <div
                     className="text-xs font-bold uppercase tracking-wide mb-2"
